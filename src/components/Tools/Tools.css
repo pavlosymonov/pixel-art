@@ -1,0 +1,61 @@
+:root {
+  --black: #1b1b1f;
+  --dark-blue: #1e90ff;
+  --light-blue: #dfe6ff;
+  --white: #ffffff;
+  --light-gray: #f1f0ff;
+}
+
+.tools {
+  position: relative;
+  display: inline-block;
+  background: #fff;
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0px 0px 1px 0px rgba(0, 0, 0, .17), 0px 0px 3px 0px rgba(0, 0, 0, .08), 0px 7px 14px 0px rgba(0, 0, 0, .05);
+  box-sizing: border-box;
+  margin: 16px auto;
+}
+
+.tools ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  margin: 0;
+}
+
+.tools-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--black);
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background-color: transparent;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.tools-button:hover {
+  background-color: var(--light-blue);
+}
+
+#uploadinput {
+  visibility: hidden;
+  position: fixed;
+}
+
+.divider {
+  width: 1px;
+  height: 1.5rem;
+  align-self: center;
+  background-color: var(--light-gray);
+  margin: 0 .25rem;
+}
