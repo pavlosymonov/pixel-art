@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 export type Image = {
   file: File;
@@ -19,17 +20,28 @@ export type Store = {
   setColorPalette: (colorPalette: string[]) => void;
 };
 
-const useStore = create<Store>((set) => ({
-  image: null,
-  height: 0,
-  width: 0,
-  blockSize: 0,
-  colorPalette: [],
-  setImage: (image: HTMLImageElement) => set({ image }),
-  setHeight: (height: number) => set({ height }),
-  setWidth: (width: number) => set({ width }),
-  setBlockSize: (blockSize: number) => set({ blockSize }),
-  setColorPalette: (colorPalette: string[]) => set({ colorPalette }),
-}));
+const useStore = create<Store>()(
+  persist(
+    (set) => ({
+      image: null,
+      height: 0,
+      width: 0,
+      blockSize: 0,
+      colorPalette: ["#000000"],
+      setImage: (image: HTMLImageElement) => set({ image }),
+      setHeight: (height: number) => set({ height }),
+      setWidth: (width: number) => set({ width }),
+      setBlockSize: (blockSize: number) => set({ blockSize }),
+      setColorPalette: (colorPalette: string[]) => set({ colorPalette }),
+    }),
+    {
+      name: "pixelit-store",
+      storage: createJSONStorage(() => sessionStorage),
+      partialize: (state) => ({
+        colorPalette: state.colorPalette,
+      }),
+    },
+  ),
+);
 
 export default useStore;
