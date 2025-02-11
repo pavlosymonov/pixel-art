@@ -1,15 +1,17 @@
-import './App.css'
-import Canvas from './components/Canvas/Canvas'
-import Tools from './components/Tools/Tools'
+import "./App.css";
+import Canvas from "./components/Canvas/Canvas";
+import { DrawProvider } from "./components/Canvas/hooks/DrawProvider";
+import Tools from "./components/Tools/Tools";
 
 function App() {
-
   return (
     <>
-      <Tools />
-      <Canvas />
+      <DrawProvider>
+        <Tools />
+        <Canvas />
+      </DrawProvider>
     </>
-  )
+  );
 }
 
-export default App
+export default App;

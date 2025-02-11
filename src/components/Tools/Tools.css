@@ -47,6 +47,12 @@
   background-color: var(--light-blue);
 }
 
+button.tools-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background-color: transparent;
+}
+
 #uploadinput {
   visibility: hidden;
   position: fixed;
@@ -58,4 +64,68 @@
   align-self: center;
   background-color: var(--light-gray);
   margin: 0 .25rem;
+}
+
+
+.input-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 .5rem;
+  height: 2.25rem;
+  width: 5rem;
+  color: var(--black);
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background-color: transparent;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: text;
+  gap: 4px;
+  transition: all 0.25s;
+}
+
+.input-block label {
+  display: flex;
+}
+
+.input-block svg {
+  flex-shrink: 0;
+}
+
+.input-block:hover {
+  background-color: #eff2fe;
+}
+
+.input-block.focused {
+  background-color: #eff2fe;
+}
+
+.size-input {
+  border: none;
+  background-color: transparent;
+  outline: none;
+  font-size: 14px;
+  width: 100%;
+  font-family: inherit;
+  color: #1b1b1f;
+}
+
+.size-input::placeholder {
+  color: rgba(27, 27, 31, .5);
+}
+
+.measure {
+  font-size: 12px;
+  color: #a0a0a0;
+  padding-right: 5px;
+  flex-shrink: 0;
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }

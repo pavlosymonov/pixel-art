@@ -1,4 +1,5 @@
-import { useState } from "react";
+import clsx from "clsx";
+import { useRef, useState } from "react";
 import { HexColorInput, HexColorPicker } from "react-colorful";
 import {
   MdAdd,
@@ -6,10 +7,12 @@ import {
   MdOutlinePalette,
   MdOutlineSave,
 } from "react-icons/md";
+import { useClickOutsideHandler } from "../../../../hooks/useClickOutsideHandler";
 import useStore from "../../../../store";
 import "./ColorPicker.css";
 
 export default function ColorPickerComponent() {
+  const containerRef = useRef(null);
   const { colorPalette, setColorPalette } = useStore();
   const [active, setActive] = useState(false);
   const [colors, setColors] = useState<string[]>(colorPalette);
@@ -71,12 +74,18 @@ export default function ColorPickerComponent() {
     setColors(newColors);
   };
 
+  useClickOutsideHandler(containerRef, () => setActive(false));
+
   return (
-    <>
-      <label className="tools-button" onClick={() => setActive(!active)}>
+    <div ref={containerRef}>
+      <span
+        className="tools-button"
+        onClick={() => setActive(!active)}
+        title="Выбор Палитры"
+      >
         <MdOutlinePalette size={20} />
-      </label>
-      <div className={`dropdown-menu ${active ? "active" : ""}`}>
+      </span>
+      <div className={clsx("dropdown-menu", active && "active")}>
         <div className="dropdown-menu-container">
           <h3 className="colors-title">Colors</h3>
           <div className="colors-container">
@@ -84,7 +93,10 @@ export default function ColorPickerComponent() {
               {colors.map((color, index) => (
                 <div
                   key={color + index}
-                  className={`color ${selectedColorIndex === index ? "selected" : ""}`}
+                  className={clsx(
+                    "color",
+                    selectedColorIndex === index && "selected",
+                  )}
                   style={{ backgroundColor: color }}
                   onClick={() => handleColorSelect(index)}
                 ></div>
@@ -120,6 +132,6 @@ export default function ColorPickerComponent() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

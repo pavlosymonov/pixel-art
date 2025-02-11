@@ -1,51 +1,35 @@
-import { ChangeEvent } from "react";
-import useStore from "../../store";
-import { MdOutlineFileUpload } from "react-icons/md";
 import ColorPicker from "./components/ColorPicker/ColorPicker";
+import Height from "./components/Height/Height";
+import Width from "./components/Width/Width";
 
 import "./Tools.css";
+import BlockSize from "./components/BlockSize/BlockSize";
+import PixelateButton from "./components/Pixelate/Pixelate";
+import UploadImageButton from "./components/UploadImage/UploadImage";
 
 export default function Tools() {
-  const { setImage } = useStore();
-
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files) return;
-
-    const file = event.target.files[0];
-
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
-    img.onload = () => {
-      setImage(img);
-    };
-  };
-
   return (
     <div className="tools">
       <ul>
         <li>
-          <label className="tools-button" htmlFor="uploadinput">
-            <MdOutlineFileUpload size={20} />
-          </label>
-          <input
-            id="uploadinput"
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-          />
+          <UploadImageButton />
         </li>
         <div className="divider"></div>
         <li>
-          <button>Height</button>
+          <Height />
         </li>
         <li>
-          <button>Width</button>
+          <Width />
         </li>
         <li>
-          <button>Block size</button>
+          <BlockSize />
         </li>
+        <div className="divider"></div>
         <li>
           <ColorPicker />
+        </li>
+        <li>
+          <PixelateButton />
         </li>
       </ul>
     </div>

@@ -1,0 +1,10 @@
+.notice {
+  font-size: 0.75rem;
+  margin-bottom: 8px;
+  color: #5c5c5c;
+}
+
+.crop-confirm {
+  padding: .5rem .75rem;
+  margin-bottom: 1rem;
+}

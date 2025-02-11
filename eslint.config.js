@@ -34,6 +34,7 @@ export default tseslint.config(
           jsxBracketSameLine: false,
         }
       ],
+      'prefer-spread': 'off',
     },
   },
 )

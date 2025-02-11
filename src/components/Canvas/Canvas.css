@@ -1,4 +1,9 @@
 .canvas {
   max-width: 100%;
-  
+  object-fit: contain;
+}
+
+.canvas__placeholder {
+  color: rgba(27, 27, 31, .5);
+  font-size: 1rem;
 }
