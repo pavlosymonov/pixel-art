@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import ReactCrop, {
   Crop,
   PixelCrop,
@@ -11,6 +11,7 @@ import "react-image-crop/dist/ReactCrop.css";
 import useStore from "../../store";
 import { canvasPreview } from "./canvasResize";
 import "./ImageCrop.css";
+import { useDrawContext } from "../Canvas/hooks/DrawProvider";
 
 // This is to demonstate how to make and center a % aspect crop
 // which is a bit trickier so we use some helper functions.
@@ -34,16 +35,12 @@ function centerAspectCrop(
   );
 }
 
-export default function ImageCrop({
-  canvasRef,
-}: {
-  canvasRef: React.RefObject<HTMLCanvasElement>;
-}) {
-  const { image, height, width, aspect, setCrop } = useStore();
+export default function ImageCrop() {
+  const { image, height, width, aspect, crop, setCrop } = useStore();
+  const { canvasRef, imgRef } = useDrawContext();
 
   const imgSrc = image;
-  const imgRef = useRef<HTMLImageElement>(null);
-  const [crop, setCropLocal] = useState<Crop>();
+  const [cropLocal, setCropLocal] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
 
   function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
@@ -87,8 +84,13 @@ export default function ImageCrop({
     }
   }, [aspect]);
 
+  const isVisible =
+    !crop ||
+    (canvasRef.current &&
+      canvasRef.current.width / canvasRef.current.height !== aspect);
+
   return (
-    <div>
+    <div className={isVisible ? "" : "hidden"}>
       {!(width && height) ? (
         <div className="notice">
           Установите Высоту и Ширину холста, чтобы определить соотношение
@@ -107,7 +109,7 @@ export default function ImageCrop({
       )}
       {!!imgSrc && (
         <ReactCrop
-          crop={crop}
+          crop={cropLocal}
           onChange={(_, percentCrop) => setCropLocal(percentCrop)}
           onComplete={(c) => {
             setCompletedCrop(c);

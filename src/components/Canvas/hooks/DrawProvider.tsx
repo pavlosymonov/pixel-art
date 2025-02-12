@@ -6,6 +6,7 @@ import {
   useRef,
 } from "react";
 import useStore from "../../../store";
+import { canvasPreview } from "../../ImageCrop/canvasResize";
 
 function hexToRgb(hex: string) {
   // Remove the '#' if it exists
@@ -27,15 +28,18 @@ function hexToRgb(hex: string) {
 
 const DrawContext = createContext<{
   canvasRef: React.RefObject<HTMLCanvasElement>;
+  imgRef: React.RefObject<HTMLImageElement>;
   drawPixels: () => void;
 }>({
   canvasRef: { current: null },
+  imgRef: { current: null },
   drawPixels: () => {},
 });
 
 export const DrawProvider = ({ children }: { children: React.ReactNode }) => {
   const { image, crop, height, width, blockSize, colorPalette } = useStore();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   // const mouse = { x: 0, y: 0, oldX: 0, oldY: 0, button: false };
 
@@ -193,11 +197,15 @@ export const DrawProvider = ({ children }: { children: React.ReactNode }) => {
 
   const drawPixels = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const img = imgRef.current;
+    if (!canvas || !img || !crop) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx || !image) return;
 
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    canvasPreview(imgRef.current, canvasRef.current, crop);
     const blocks = _generateBlocks(canvas, ctx);
 
     const w = canvas.clientWidth;
@@ -244,10 +252,10 @@ export const DrawProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
     }
-  }, [crop]);
+  }, [crop, width, height, blockSize, colorPalette]);
 
   return (
-    <DrawContext.Provider value={{ canvasRef, drawPixels }}>
+    <DrawContext.Provider value={{ canvasRef, imgRef, drawPixels }}>
       {children}
     </DrawContext.Provider>
   );

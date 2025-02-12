@@ -4,17 +4,12 @@ import "./Canvas.css";
 import { useDrawContext } from "./hooks/DrawProvider";
 
 export default function Canvas() {
-  const { image, crop, aspect } = useStore();
+  const { image } = useStore();
   const { canvasRef } = useDrawContext();
 
   return (
     <div>
-      {image &&
-        (!crop ||
-          (canvasRef.current &&
-            canvasRef.current.width / canvasRef.current.height !== aspect)) && (
-          <ImageCrop canvasRef={canvasRef} />
-        )}
+      {image && <ImageCrop />}
       <canvas className="canvas" ref={canvasRef}></canvas>
       {!image && (
         <div className="canvas__placeholder">
