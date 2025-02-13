@@ -24,7 +24,7 @@ export default function PixelateButton() {
         data-tooltip-place="top"
         onClick={handlePixelate}
       >
-        <BsFillPlayFill size={20} />
+        <BsFillPlayFill size={20} style={{ flexShrink: 0 }} />
       </button>
       {isDisabled && <Tooltip id="pixelate" style={{ zIndex: 2 }} />}
     </>
