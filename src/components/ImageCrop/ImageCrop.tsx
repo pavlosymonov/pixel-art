@@ -9,9 +9,9 @@ import ReactCrop, {
 
 import "react-image-crop/dist/ReactCrop.css";
 import useStore from "../../store";
+import { useDrawContext } from "../Canvas/hooks/DrawProvider";
 import { canvasPreview } from "./canvasResize";
 import "./ImageCrop.css";
-import { useDrawContext } from "../Canvas/hooks/DrawProvider";
 
 // This is to demonstate how to make and center a % aspect crop
 // which is a bit trickier so we use some helper functions.
@@ -75,19 +75,16 @@ export default function ImageCrop() {
 
   useEffect(() => {
     if (imgRef.current) {
-      const centeredAspectCrop = centerAspectCrop(
-        imgRef.current.width,
-        imgRef.current.height,
-        aspect,
-      );
+      const { width, height } = imgRef.current;
+
+      const centeredAspectCrop = centerAspectCrop(width, height, aspect);
       setCropLocal(centeredAspectCrop);
+      setCompletedCrop(convertToPixelCrop(centeredAspectCrop, width, height));
     }
   }, [aspect]);
 
   const isVisible =
-    !crop ||
-    (canvasRef.current &&
-      canvasRef.current.width / canvasRef.current.height !== aspect);
+    !crop || Math.round((crop.width / crop.height) * 100) / 100 !== aspect;
 
   return (
     <div className={isVisible ? "" : "hidden"}>
@@ -111,13 +108,17 @@ export default function ImageCrop() {
         <ReactCrop
           crop={cropLocal}
           onChange={(_, percentCrop) => setCropLocal(percentCrop)}
-          onComplete={(c) => {
-            setCompletedCrop(c);
-          }}
+          onComplete={(c) => setCompletedCrop(c)}
           aspect={aspect}
           minHeight={100}
         >
-          <img ref={imgRef} alt="Crop me" src={imgSrc} onLoad={onImageLoad} />
+          <img
+            ref={imgRef}
+            alt="Crop me"
+            src={imgSrc}
+            onLoad={onImageLoad}
+            style={{ maxWidth: "1200px" }}
+          />
         </ReactCrop>
       )}
     </div>

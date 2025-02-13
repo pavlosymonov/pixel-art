@@ -88,6 +88,7 @@
 }
 
 .add-color {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -107,4 +108,22 @@
   flex-direction: column;
   gap: .5rem;
   align-items: center;
+}
+
+.indicator {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #d21717;
+  z-index: 2;
+  transition: all .1s ease;
+}
+
+.color:hover .indicator {
+  width: 10px;
+  height: 10px;
 }

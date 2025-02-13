@@ -3,127 +3,195 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
+  useState,
 } from "react";
 import useStore from "../../../store";
 import { canvasPreview } from "../../ImageCrop/canvasResize";
-
-function hexToRgb(hex: string) {
-  // Remove the '#' if it exists
-  hex = hex.replace("#", "");
-
-  // Handle shorthand hex codes (e.g., "ABC")
-  if (hex.length === 3) {
-    hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-  }
-
-  // Parse the hex values for red, green, and blue
-  const r = parseInt(hex.substring(0, 2), 16);
-  const g = parseInt(hex.substring(2, 4), 16);
-  const b = parseInt(hex.substring(4, 6), 16);
-
-  // Return the RGB values as an object
-  return [r, g, b];
-}
+import useViewTransform, { INITIAL_MATRIX } from "./useViewTransform";
+import { hexToRgb } from "../../../utils";
 
 const DrawContext = createContext<{
   canvasRef: React.RefObject<HTMLCanvasElement>;
   imgRef: React.RefObject<HTMLImageElement>;
-  drawPixels: () => void;
+  blocks: number[][][];
+  paletteMap: { [x: string]: number };
+  pixelize: () => void;
+  clearCanvas: () => void;
+  clearView: () => void;
 }>({
   canvasRef: { current: null },
   imgRef: { current: null },
-  drawPixels: () => {},
+  blocks: [],
+  paletteMap: {},
+  pixelize: () => {},
+  clearCanvas: () => {},
+  clearView: () => {},
 });
 
 export const DrawProvider = ({ children }: { children: React.ReactNode }) => {
-  const { image, crop, height, width, blockSize, colorPalette } = useStore();
+  const { image, crop, height, width, blockSize, colorPalette, setCrop } =
+    useStore();
+  const { apply, pan, scaleAt, clearView, pos, scale, matrix } =
+    useViewTransform();
+  const [blocks, setBlocks] = useState<number[][][]>([]);
+  const [zoom, setZoom] = useState<{ in: boolean; x: number; y: number }>({
+    in: true,
+    x: 0,
+    y: 0,
+  });
+
+  const paletteMap = useMemo(() => {
+    return colorPalette.reduce(
+      (acc, color, index) => {
+        const rgbColor = hexToRgb(color);
+        acc[`${rgbColor[0]},${rgbColor[1]},${rgbColor[2]}`] = index;
+        return acc;
+      },
+      {} as { [x: string]: number },
+    );
+  }, [colorPalette]);
+
+  const [mouseState, setMouseState] = useState({
+    x: 0,
+    y: 0,
+    oldX: 0,
+    oldY: 0,
+    button: false,
+  });
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // const mouse = { x: 0, y: 0, oldX: 0, oldY: 0, button: false };
+  const getScaleFactor = (w: number, h: number) => {
+    const scaledW = width / blockSize / w;
+    const scaledH = height / blockSize / h;
 
-  // const mouseEvent = (event) => {
-  //   if (event.type === "mousedown") {
-  //     mouse.button = true;
-  //     if (!event.altKey) {
-  //       canvas.style.cursor = "grabbing";
-  //     }
-  //   }
-  //   if (event.type === "mouseup" || event.type === "mouseout") {
-  //     mouse.button = false;
-  //     if (event.altKey) {
-  //       const x = event.offsetX;
-  //       const y = event.offsetY;
+    return Math.min(scaledW, scaledH);
+  };
 
-  //       const containerWidth = px.drawto.offsetWidth;
-  //       const containerHeight = px.drawto.offsetHeight;
-  //       const canvasWidth = px.drawto.width;
-  //       const canvasHeight = px.drawto.height;
+  const mouseEvent = (event: MouseEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  //       const widthRatio = canvasWidth / containerWidth;
-  //       const heightRatio = canvasHeight / containerHeight;
+    if (event.type === "mousedown") {
+      setMouseState((state) => ({ ...state, button: true }));
+      if (!event.altKey) {
+        canvas.style.cursor = "grabbing";
+      }
+    }
+    if (event.type === "mouseup" || event.type === "mouseout") {
+      setMouseState((state) => ({ ...state, button: false }));
+      canvas.style.cursor = "default";
+      // if (event.altKey) {
+      //   const x = event.offsetX;
+      //   const y = event.offsetY;
 
-  //       const adjustedMouseX = x * widthRatio;
-  //       const adjustedMouseY = y * heightRatio;
+      //   const containerWidth = canvas.offsetWidth;
+      //   const containerHeight = canvas.offsetHeight;
+      //   const canvasWidth = canvas.width;
+      //   const canvasHeight = canvas.height;
 
-  //       const scaleFactor = px.getScale();
-  //       const size = Math.ceil(1 / scaleFactor);
+      //   const widthRatio = canvasWidth / containerWidth;
+      //   const heightRatio = canvasHeight / containerHeight;
 
-  //       const translatedMouseX =
-  //         (adjustedMouseX - px.view.position.x) / px.view.scale;
-  //       const translatedMouseY =
-  //         (adjustedMouseY - px.view.position.y) / px.view.scale;
+      //   const adjustedMouseX = x * widthRatio;
+      //   const adjustedMouseY = y * heightRatio;
 
-  //       const col = Math.floor(translatedMouseX / size);
-  //       const row = Math.floor(translatedMouseY / size);
+      //   const scaleFactor = px.getScale();
+      //   const size = Math.ceil(1 / scaleFactor);
 
-  //       if (
-  //         row >= 0 &&
-  //         row < px.blocks.length &&
-  //         col >= 0 &&
-  //         col < px.blocks[row].length
-  //       ) {
-  //         // Change the color of the clicked rectangle
+      //   const translatedMouseX =
+      //     (adjustedMouseX - px.view.position.x) / px.view.scale;
+      //   const translatedMouseY =
+      //     (adjustedMouseY - px.view.position.y) / px.view.scale;
 
-  //         px.blocks[row][col] = [3, 100, 175];
-  //         px.ctx.clearRect(0, 0, px.drawto.width, px.drawto.height);
-  //         px.drawBlocks();
-  //         return;
-  //       }
-  //     } else {
-  //       canvas.style.cursor = "default";
-  //     }
-  //   }
-  //   mouse.oldX = mouse.x;
-  //   mouse.oldY = mouse.y;
-  //   mouse.x = event.offsetX;
-  //   mouse.y = event.offsetY;
-  //   if (mouse.button) {
-  //     // pan if button down
-  //     px.view.pan({ x: mouse.x - mouse.oldX, y: mouse.y - mouse.oldY });
-  //   }
-  // };
+      //   const col = Math.floor(translatedMouseX / size);
+      //   const row = Math.floor(translatedMouseY / size);
 
-  // function mouseWheelEvent(event) {
-  //   const x = event.offsetX;
-  //   const y = event.offsetY;
-  //   if (event.deltaY < 0) {
-  //     px.view.scaleAt({ x, y }, 1.1);
-  //   } else {
-  //     px.view.scaleAt({ x, y }, 1 / 1.1);
-  //   }
-  //   event.preventDefault();
-  // }
+      //   if (
+      //     row >= 0 &&
+      //     row < px.blocks.length &&
+      //     col >= 0 &&
+      //     col < px.blocks[row].length
+      //   ) {
+      //     // Change the color of the clicked rectangle
+
+      //     px.blocks[row][col] = [3, 100, 175];
+      //     px.ctx.clearRect(0, 0, px.drawto.width, px.drawto.height);
+      //     px.drawBlocks();
+      //     return;
+      //   }
+      // } else {
+      //   canvas.style.cursor = "default";
+      // }
+    }
+
+    setMouseState((state) => ({
+      ...state,
+      oldX: state.x,
+      oldY: state.y,
+      x: event.offsetX,
+      y: event.offsetY,
+    }));
+  };
+
+  function mouseWheelEvent(event: WheelEvent) {
+    const x = event.offsetX;
+    const y = event.offsetY;
+    if (event.deltaY < 0) {
+      setZoom({ in: true, x, y });
+    } else {
+      setZoom({ in: false, x, y });
+    }
+
+    event.preventDefault();
+  }
 
   useEffect(() => {
-    // const canvas = canvasRef.current!;
-    // canvas.addEventListener("mousemove", mouseEvent);
-    // canvas.addEventListener("mousedown", mouseEvent);
-    // canvas.addEventListener("mouseup", mouseEvent);
-    // canvas.addEventListener("mouseout", mouseEvent);
-    // canvas.addEventListener("wheel", mouseWheelEvent);
-  }, []);
+    if (!canvasRef.current) return;
+
+    if (zoom.in) {
+      console.log("Fires: 1");
+      scaleAt({ x: zoom.x, y: zoom.y }, 1.1, canvasRef.current);
+    } else {
+      console.log("Fires: 2");
+      scaleAt({ x: zoom.x, y: zoom.y }, 1 / 1.1, canvasRef.current);
+    }
+  }, [zoom]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    canvas.addEventListener("mousemove", mouseEvent);
+    canvas.addEventListener("mousedown", mouseEvent);
+    canvas.addEventListener("mouseup", mouseEvent);
+    canvas.addEventListener("mouseout", mouseEvent);
+    canvas.addEventListener("wheel", mouseWheelEvent);
+
+    return () => {
+      canvas.removeEventListener("mousemove", mouseEvent);
+      canvas.removeEventListener("mousedown", mouseEvent);
+      canvas.removeEventListener("mouseup", mouseEvent);
+      canvas.removeEventListener("mouseout", mouseEvent);
+      canvas.removeEventListener("wheel", mouseWheelEvent);
+    };
+  }, [blocks]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    if (mouseState.button) {
+      // pan if button down
+      pan({
+        x: mouseState.x - mouseState.oldX,
+        y: mouseState.y - mouseState.oldY,
+      });
+    }
+  }, [mouseState]);
 
   const colorSim = (rgbColor: number[], compareColor: number[]) => {
     let i;
@@ -164,9 +232,7 @@ export const DrawProvider = ({ children }: { children: React.ReactNode }) => {
     const w = canvas.width;
     const h = canvas.height;
 
-    const scaledW = width / blockSize / w;
-    const scaledH = height / blockSize / h;
-    const scaleFactor = Math.min(scaledW, scaledH);
+    const scaleFactor = getScaleFactor(w, h);
     const pixelSize = Math.ceil(1 / scaleFactor);
 
     const imgPixels = ctx.getImageData(0, 0, w, h);
@@ -195,25 +261,13 @@ export const DrawProvider = ({ children }: { children: React.ReactNode }) => {
     return blocks;
   };
 
-  const drawPixels = useCallback(() => {
-    const canvas = canvasRef.current;
-    const img = imgRef.current;
-    if (!canvas || !img || !crop) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx || !image) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    canvasPreview(imgRef.current, canvasRef.current, crop);
-    const blocks = _generateBlocks(canvas, ctx);
-
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-
-    const scaledW = width / blockSize / w;
-    const scaledH = height / blockSize / h;
-    const scaleFactor = Math.min(scaledW, scaledH);
+  const _drawBlocks = (
+    w: number,
+    h: number,
+    ctx: CanvasRenderingContext2D,
+    blocks: number[][][],
+  ) => {
+    const scaleFactor = getScaleFactor(w, h);
     const pixelSize = Math.ceil(1 / scaleFactor);
 
     if (blocks.length) {
@@ -224,38 +278,105 @@ export const DrawProvider = ({ children }: { children: React.ReactNode }) => {
           const [r, g, b] = blocks[row][col];
 
           // Draw rectangle
-          const fillColor = `rgb(${r}, ${g}, ${b})`;
-          // if (this.view.scale > 3) {
-          //   fillColor = `rgb(${Math.min(r + 75, 255)}, ${Math.min(g + 75, 255)}, ${Math.min(b + 75, 255)})`;
-          // }
+          let fillColor = `rgb(${r}, ${g}, ${b})`;
+          if (scale > 3) {
+            fillColor = `rgb(${Math.min(r + 75, 255)}, ${Math.min(g + 75, 255)}, ${Math.min(b + 75, 255)})`;
+          }
 
           ctx.fillStyle = fillColor;
           ctx.fillRect(x, y, pixelSize, pixelSize);
-          // if (this.view.scale > 3) {
-          //   // Draw border with specified stroke width
-          //   this.ctx.lineWidth = 0.5; // Set the stroke width to 2 pixels
-          //   this.ctx.strokeStyle = "black";
-          //   this.ctx.strokeRect(x, y, size, size);
+          if (scale > 3) {
+            // Draw border with specified stroke width
+            ctx.lineWidth = 0.5; // Set the stroke width to 2 pixels
+            ctx.strokeStyle = "black";
+            ctx.strokeRect(x, y, pixelSize, pixelSize);
 
-          //   // Draw color index text
-          //   this.ctx.fillStyle = "black";
-          //   this.ctx.font = `${size / 2}px Arial`;
-          //   this.ctx.textAlign = "center"; // Add this line
-          //   this.ctx.textBaseline = "middle"; // Add this line
-          //   const str = `${r},${g},${b}`;
-          //   this.ctx.fillText(
-          //     this._paletteMap[str],
-          //     x + size / 2,
-          //     y + size / 2,
-          //   );
-          // }
+            // Draw color index text
+            ctx.fillStyle = "black";
+            ctx.font = `${pixelSize / 2}px Arial`;
+            ctx.textAlign = "center"; // Add this line
+            ctx.textBaseline = "middle"; // Add this line
+            const str = `${r},${g},${b}`;
+            ctx.fillText(
+              String(paletteMap[str]),
+              x + pixelSize / 2,
+              y + pixelSize / 2,
+            );
+          }
         }
       }
     }
+  };
+
+  const pixelize = useCallback(() => {
+    const canvas = canvasRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img || !crop) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx || !image) return;
+
+    ctx.clearRect(0, 0, canvas.width * 2, canvas.height * 2);
+
+    canvasPreview(imgRef.current, canvasRef.current, crop);
+    const blocks = _generateBlocks(canvas, ctx);
+    setBlocks(blocks);
+    _drawBlocks(canvas.clientWidth, canvas.clientHeight, ctx, blocks);
   }, [crop, width, height, blockSize, colorPalette]);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    if (blocks.length) {
+      apply();
+    }
+  }, [pos, scale]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.setTransform(new DOMMatrix(INITIAL_MATRIX));
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.setTransform(new DOMMatrix(matrix));
+
+    _drawBlocks(canvas.width, canvas.height, ctx, blocks);
+  }, [matrix]);
+
+  const clearCanvas = useCallback(() => {
+    setCrop(null);
+    setBlocks([]);
+    setMouseState({
+      x: 0,
+      y: 0,
+      oldX: 0,
+      oldY: 0,
+      button: false,
+    });
+    clearView();
+
+    canvasRef.current
+      ?.getContext("2d")
+      ?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+  }, []);
+
   return (
-    <DrawContext.Provider value={{ canvasRef, imgRef, drawPixels }}>
+    <DrawContext.Provider
+      value={{
+        canvasRef,
+        imgRef,
+        blocks,
+        paletteMap,
+        pixelize,
+        clearCanvas,
+        clearView,
+      }}
+    >
       {children}
     </DrawContext.Provider>
   );

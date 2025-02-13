@@ -7,9 +7,14 @@ import {
   MdOutlinePalette,
   MdOutlineSave,
 } from "react-icons/md";
+import { ToastContainer, toast } from "react-toastify";
 import { useClickOutsideHandler } from "../../../../hooks/useClickOutsideHandler";
 import useStore from "../../../../store";
 import "./ColorPicker.css";
+
+function matchColorPalettes(a: string[], b: string[]) {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
 
 export default function ColorPickerComponent() {
   const containerRef = useRef(null);
@@ -43,6 +48,7 @@ export default function ColorPickerComponent() {
 
   const handleSavePalette = () => {
     setColorPalette(colors);
+    toast.success("Палитра сохранена");
   };
 
   const handleDeleteColor = () => {
@@ -112,6 +118,9 @@ export default function ColorPickerComponent() {
               )}
               <div className="color add-color" onClick={handleSavePalette}>
                 <MdOutlineSave size={15} />
+                {!matchColorPalettes(colorPalette, colors) && (
+                  <div className="indicator"></div>
+                )}
               </div>
             </div>
             {selectedColorIndex !== null && (
@@ -132,6 +141,7 @@ export default function ColorPickerComponent() {
           </div>
         </div>
       </div>
+      <ToastContainer hideProgressBar />
     </div>
   );
 }

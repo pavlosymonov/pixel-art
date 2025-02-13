@@ -5,8 +5,13 @@ import { useDrawContext } from "../../../Canvas/hooks/DrawProvider";
 
 export default function PixelateButton() {
   const { height, width, blockSize, crop } = useStore();
-  const { drawPixels } = useDrawContext();
+  const { pixelize, clearView } = useDrawContext();
   const isDisabled = !height || !width || !blockSize || !crop;
+
+  const handlePixelate = () => {
+    clearView();
+    pixelize();
+  };
 
   return (
     <>
@@ -17,7 +22,7 @@ export default function PixelateButton() {
         data-tooltip-id="pixelate"
         data-tooltip-content="Установите высоту, ширину и размер блока."
         data-tooltip-place="top"
-        onClick={drawPixels}
+        onClick={handlePixelate}
       >
         <BsFillPlayFill size={20} />
       </button>

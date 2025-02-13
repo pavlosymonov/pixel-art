@@ -38,12 +38,16 @@ const useStore = create<Store>()(
       setCrop: (crop: PixelCrop | null) => set({ crop }),
       setHeight: (height: number) =>
         set((state) => {
-          const aspect = state.width ? state.width / height : 1;
+          const aspect = state.width
+            ? Math.round((state.width / height) * 100) / 100 // round to 2 decimal places
+            : 1;
           return { height, aspect };
         }),
       setWidth: (width: number) =>
         set((state) => {
-          const aspect = state.height ? width / state.height : 1;
+          const aspect = state.height
+            ? Math.round((width / state.height) * 100) / 100 // round to 2 decimal places
+            : 1;
           return { width, aspect };
         }),
       setBlockSize: (blockSize: number) => set({ blockSize }),

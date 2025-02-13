@@ -10,7 +10,10 @@ export default function Canvas() {
   return (
     <div>
       {image && <ImageCrop />}
-      <canvas className="canvas" ref={canvasRef}></canvas>
+      <canvas
+        className={`canvas ${image ? "" : "hidden"}`}
+        ref={canvasRef}
+      ></canvas>
       {!image && (
         <div className="canvas__placeholder">
           <p>Загрузите изображение чтобы начать</p>
