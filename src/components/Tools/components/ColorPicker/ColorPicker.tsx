@@ -21,6 +21,7 @@ export default function ColorPickerComponent() {
   const { colorPalette, setColorPalette } = useStore();
   const [active, setActive] = useState(false);
   const [colors, setColors] = useState<string[]>(colorPalette);
+  const [importColors, setImportColors] = useState<string>("");
   const [selectedColorIndex, setSelectedColorIndex] = useState<number | null>(
     null,
   );
@@ -80,6 +81,34 @@ export default function ColorPickerComponent() {
     setColors(newColors);
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      // Set global colors here
+      const colors = importColors.split(",");
+      const validColors: string[] = [];
+      const invalidColors: string[] = [];
+
+      colors.forEach((color) => {
+        if (/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color)) {
+          validColors.push(color);
+        } else {
+          invalidColors.push(color);
+        }
+      });
+
+      if (invalidColors.length) {
+        toast.error(`Неверный формат цвета: ${invalidColors.join(", ")}`);
+      } else if (!validColors.length) {
+        toast.error("Неверный формат цвета");
+        return;
+      }
+
+      setColors(validColors);
+      setColorPalette(validColors);
+      setImportColors("");
+    }
+  };
+
   useClickOutsideHandler(containerRef, () => setActive(false));
 
   return (
@@ -93,51 +122,65 @@ export default function ColorPickerComponent() {
       </span>
       <div className={clsx("dropdown-menu", active && "active")}>
         <div className="dropdown-menu-container">
-          <h3 className="colors-title">Colors</h3>
-          <div className="colors-container">
-            <div className="colors-list">
-              {colors.map((color, index) => (
-                <div
-                  key={color + index}
-                  className={clsx(
-                    "color",
-                    selectedColorIndex === index && "selected",
+          <div>
+            <h3 className="colors-title">Цвета</h3>
+            <div className="colors-container">
+              <div className="colors-list">
+                {colors.map((color, index) => (
+                  <div
+                    key={color + index}
+                    className={clsx(
+                      "color",
+                      selectedColorIndex === index && "selected",
+                    )}
+                    style={{ backgroundColor: color }}
+                    onClick={() => handleColorSelect(index)}
+                  ></div>
+                ))}
+                <div className="divider"></div>
+                <div className="color add-color" onClick={handleAddColor}>
+                  <MdAdd size={15} />
+                </div>
+                {!!selectedColorIndex && (
+                  <div className="color add-color" onClick={handleDeleteColor}>
+                    <MdDeleteOutline size={15} />
+                  </div>
+                )}
+                <div className="color add-color" onClick={handleSavePalette}>
+                  <MdOutlineSave size={15} />
+                  {!matchColorPalettes(colorPalette, colors) && (
+                    <div className="indicator"></div>
                   )}
-                  style={{ backgroundColor: color }}
-                  onClick={() => handleColorSelect(index)}
-                ></div>
-              ))}
-              <div className="divider"></div>
-              <div className="color add-color" onClick={handleAddColor}>
-                <MdAdd size={15} />
+                </div>
               </div>
-              {!!selectedColorIndex && (
-                <div className="color add-color" onClick={handleDeleteColor}>
-                  <MdDeleteOutline size={15} />
+              {selectedColorIndex !== null && (
+                <div className="color-picker-container">
+                  <HexColorPicker
+                    onChange={handleOnChange}
+                    color={colors[selectedColorIndex]}
+                    className="color-picker"
+                  />
+                  <HexColorInput
+                    color={colors[selectedColorIndex]}
+                    onChange={handleOnColorChangeInput}
+                    className="color-input"
+                    prefixed
+                  />
                 </div>
               )}
-              <div className="color add-color" onClick={handleSavePalette}>
-                <MdOutlineSave size={15} />
-                {!matchColorPalettes(colorPalette, colors) && (
-                  <div className="indicator"></div>
-                )}
-              </div>
             </div>
-            {selectedColorIndex !== null && (
-              <div className="color-picker-container">
-                <HexColorPicker
-                  onChange={handleOnChange}
-                  color={colors[selectedColorIndex]}
-                  className="color-picker"
-                />
-                <HexColorInput
-                  color={colors[selectedColorIndex]}
-                  onChange={handleOnColorChangeInput}
-                  className="color-input"
-                  prefixed
-                />
-              </div>
-            )}
+          </div>
+          <div>
+            <h3 className="colors-title">Импорт цветов</h3>
+
+            <input
+              className="import-colors"
+              type="text"
+              placeholder="#000000,#ffffff"
+              value={importColors}
+              onChange={(event) => setImportColors(event.target.value)}
+              onKeyDown={handleKeyDown}
+            />
           </div>
         </div>
       </div>

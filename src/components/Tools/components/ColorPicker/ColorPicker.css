@@ -23,6 +23,9 @@
   padding: .75rem;
   position: relative;
   transition: box-shadow .5s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
 }
 
 .color-picker {
@@ -126,4 +129,23 @@
 .color:hover .indicator {
   width: 10px;
   height: 10px;
+}
+
+.import-colors {
+  border: none;
+  background-color: transparent;
+  outline: none;
+  font-size: 14px;
+  width: 100%;
+  font-family: inherit;
+  color: #1b1b1f;
+}
+
+.import-colors::placeholder {
+  color: rgba(27, 27, 31, .5);
+}
+
+.import-colors-container {
+  display: flex;
+  gap: .5rem;
 }
